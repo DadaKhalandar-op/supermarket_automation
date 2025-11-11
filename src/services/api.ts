@@ -1,11 +1,15 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://supermarket-automation-backend-suai.onrender.com/api';
+
+// Debug: Log the API URL being used
+console.log('🔗 API URL:', API_URL);
+console.log('🔑 Environment Variable:', import.meta.env.VITE_API_URL);
 
 interface LoginCredentials {
   username: string;
   password: string;
 }
 
-interface User {
+interface User { 
   _id: string;
   username: string;
   fullName: string;
@@ -65,12 +69,18 @@ const handleResponse = async (response: Response) => {
 
 export const authAPI = {
   login: async (credentials: LoginCredentials) => {
+    console.log('🔐 Attempting login to:', `${API_URL}/auth/login`);
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
-    if (!response.ok) throw new Error('Login failed');
+    console.log('📡 Login response status:', response.status);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ Login error:', errorData);
+      throw new Error(errorData.message || 'Login failed');
+    }
     return response.json();
   },
 

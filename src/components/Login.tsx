@@ -10,7 +10,7 @@ export default function Login() {
   const { login, sessionExpired, clearSessionExpired } = useAuth();
 
   useEffect(() => {
-    if (sessionExpired) {
+    if (sessionExpired) { 
       setError('Your session has expired. Please login again.');
       clearSessionExpired();
     }

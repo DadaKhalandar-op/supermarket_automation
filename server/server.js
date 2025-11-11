@@ -10,7 +10,6 @@ import salesRoutes from './routes/sales.js';
 dotenv.config();
  
 const app = express();
-const p = 5;
 
 connectDB();
 

@@ -49,6 +49,20 @@ const getAuthHeaders = () => {
   };
 };
 
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    const error = await response.json();
+    if (error.sessionExpired) {
+      // Trigger session expired state
+      localStorage.removeItem('token');
+      localStorage.removeItem('expiresAt');
+      window.location.reload(); // Force reload to trigger AuthContext check
+    }
+    throw error;
+  }
+  return response.json();
+};
+
 export const authAPI = {
   login: async (credentials: LoginCredentials) => {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -64,8 +78,7 @@ export const authAPI = {
     const response = await fetch(`${API_URL}/auth/me`, {
       headers: getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to get current user');
-    return response.json();
+    return handleResponse(response);
   },
 };
 
@@ -225,6 +238,18 @@ export const salesAPI = {
       headers: getAuthHeaders(),
     });
     if (!response.ok) throw new Error('Failed to fetch statistics');
+    return response.json();
+  },
+
+  getTrends: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const response = await fetch(`${API_URL}/sales/trends?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch trends');
     return response.json();
   },
 };

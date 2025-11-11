@@ -8,15 +8,23 @@ export const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Token is automatically validated by jwt.verify() which checks expiration
       req.user = await User.findById(decoded.id).select('-password');
+      
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not found', sessionExpired: true });
+      }
+      
       next();
     } catch (error) {
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Session expired. Please login again.', sessionExpired: true });
+      }
+      res.status(401).json({ message: 'Not authorized, token failed', sessionExpired: true });
     }
-  }
-
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+  } else {
+    res.status(401).json({ message: 'Not authorized, no token', sessionExpired: true });
   }
 };
 

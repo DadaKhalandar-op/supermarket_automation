@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShoppingCart } from 'lucide-react';
 
@@ -7,7 +7,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, sessionExpired, clearSessionExpired } = useAuth();
+
+  useEffect(() => {
+    if (sessionExpired) {
+      setError('Your session has expired. Please login again.');
+      clearSessionExpired();
+    }
+  }, [sessionExpired, clearSessionExpired]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

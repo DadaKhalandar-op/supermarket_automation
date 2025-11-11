@@ -1,11 +1,24 @@
 import { useState, useEffect } from 'react';
 import { salesAPI, itemsAPI } from '../../services/api';
-import { TrendingUp, Calendar, Download, DollarSign, Package } from 'lucide-react';
+import { TrendingUp, Calendar, Download, DollarSign, Package, BarChart3 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 export default function SalesStatistics() {
   const [statistics, setStatistics] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
+  const [trends, setTrends] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -34,6 +47,9 @@ export default function SalesStatistics() {
 
       const salesData = await salesAPI.getAll(startDate, endDate);
       setSales(salesData);
+
+      const trendsData = await salesAPI.getTrends(startDate, endDate);
+      setTrends(trendsData);
     } catch (error) {
       console.error('Error fetching statistics:', error);
     }
@@ -147,6 +163,109 @@ export default function SalesStatistics() {
           </div>
           <p className="text-sm text-gray-600 mb-1">Total Items Sold</p>
           <p className="text-3xl font-bold text-gray-900">{getTotalQuantity()}</p>
+        </div>
+      </div>
+
+      {/* Sales Trends Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue & Profit Trends Line Chart */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+              Revenue & Profit Trends
+            </h3>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) => new Date(date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                  stroke="#6b7280"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  style={{ fontSize: '12px' }}
+                  tickFormatter={(value) => `₹${value}`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    padding: '12px',
+                  }}
+                  formatter={(value: number) => [`₹${value.toFixed(2)}`, '']}
+                  labelFormatter={(date) => new Date(date).toLocaleDateString('en-IN')}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  name="Revenue"
+                  dot={{ fill: '#10b981', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="profit"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  name="Profit"
+                  dot={{ fill: '#8b5cf6', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Top Items Bar Chart */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
+              Top 10 Items by Revenue
+            </h3>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={statistics.slice(0, 10)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="itemCode"
+                  stroke="#6b7280"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  style={{ fontSize: '12px' }}
+                  tickFormatter={(value) => `₹${value}`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    padding: '12px',
+                  }}
+                  formatter={(value: number) => [`₹${value.toFixed(2)}`, '']}
+                  labelFormatter={(code) => {
+                    const item = statistics.find((s) => s.itemCode === code);
+                    return item ? item.itemName : code;
+                  }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Bar dataKey="totalRevenue" fill="#10b981" name="Revenue" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="totalProfit" fill="#8b5cf6" name="Profit" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 

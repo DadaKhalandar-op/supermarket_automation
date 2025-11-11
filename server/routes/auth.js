@@ -7,7 +7,7 @@ const router = express.Router();
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    expiresIn: '2h', // Session timeout set to 2 hours
   });
 };
 
@@ -18,12 +18,16 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ username, isActive: true });
 
     if (user && (await user.matchPassword(password))) {
+      const token = generateToken(user._id);
+      const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
+
       res.json({
         _id: user._id,
         username: user.username,
         fullName: user.fullName,
         role: user.role,
-        token: generateToken(user._id),
+        token,
+        expiresAt: expiresAt.toISOString(),
       });
     } else {
       res.status(401).json({ message: 'Invalid username or password' });

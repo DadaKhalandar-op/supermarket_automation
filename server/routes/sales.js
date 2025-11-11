@@ -154,6 +154,55 @@ router.get('/statistics', protect, managerOnly, async (req, res) => {
   }
 });
 
+// New endpoint for sales trends (daily aggregation)
+router.get('/trends', protect, managerOnly, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    let matchStage = {};
+
+    // Default to last 30 days if no dates provided
+    const end = endDate ? new Date(endDate + 'T23:59:59.999Z') : new Date();
+    const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    matchStage.saleDate = {
+      $gte: start,
+      $lte: end,
+    };
+
+    const dailyTrends = await Sale.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$saleDate' },
+            month: { $month: '$saleDate' },
+            day: { $dayOfMonth: '$saleDate' },
+          },
+          date: { $first: '$saleDate' },
+          totalRevenue: { $sum: '$totalAmount' },
+          totalProfit: { $sum: '$totalProfit' },
+          salesCount: { $sum: 1 },
+        }
+      },
+      { $sort: { date: 1 } },
+      {
+        $project: {
+          _id: 0,
+          date: '$date',
+          revenue: '$totalRevenue',
+          profit: '$totalProfit',
+          sales: '$salesCount',
+        }
+      }
+    ]);
+
+    res.json(dailyTrends);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get('/:id', protect, async (req, res) => {
   try {
     const sale = await Sale.findById(req.params.id);
